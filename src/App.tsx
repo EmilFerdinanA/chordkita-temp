@@ -2,7 +2,8 @@ import React, { useState } from "react";
 
 // Song data
 const song = {
-  capo: "",
+  capo: "D",
+  tempo: "4/4",
   sections: [
     {
       title: "Intro ",
@@ -15,7 +16,7 @@ const song = {
       title: "",
       lines: [
         {
-          chord: "G        Cmaj7         Gmaj7",
+          chord: "G/B        Cmaj7         Gmaj7",
           lyric: "Suatu malam adam bercerita",
         },
         {
@@ -33,9 +34,8 @@ const song = {
       ],
     },
     {
-      title: "",
+      title: "Reff",
       lines: [
-        { chord: "reff:", lyric: "" },
         { chord: "G           Dm", lyric: "Gila tak masuk logika" },
         { chord: "Am7", lyric: "Termangu hatiku" },
         {
@@ -56,7 +56,7 @@ const song = {
           lyric: "Kunci dari semua masalah ini",
         },
         {
-          chord: "Am7      Em           Gmaj7",
+          chord: "Am7          Em           Gmaj7",
           lyric: "Jujur tak mudah untuk melangkah pergi",
         },
         {
@@ -80,9 +80,9 @@ const song = {
       ],
     },
     {
-      title: "interlude ",
+      title: "Interlude ",
       lines: [
-        { chord: "Am..   Em   G   D", lyric: "" },
+        { chord: "Am..   Em...  G..   D", lyric: "" },
         { chord: "Am..   Em   G   D", lyric: "" },
       ],
     },
@@ -131,24 +131,20 @@ const enharmonicMap: Record<string, string> = {
   "B#": "C",
 };
 
-// Transpose a single chord
+// Transpose a single chord and preserve trailing dots
 function transposeSingleChord(chord: string, steps: number): string {
-  // Remove trailing dots like "G.."
-  let cleanChord = chord.replace(/\.+$/, "");
+  const dotMatch = chord.match(/(\.*)$/);
+  const trailingDots = dotMatch ? dotMatch[0] : "";
+  const cleanChord = chord.replace(/\.*$/, "");
   const parts = cleanChord.split("/");
 
   const transposePart = (part: string) => {
     const match = part.match(/^([A-G])([b#]?)(.*)$/);
     if (!match) return part;
-
     let [_, root, accidental, suffix] = match;
     let rootNote = root + accidental;
 
-    // Normalize to sharps
-    if (enharmonicMap[rootNote]) {
-      rootNote = enharmonicMap[rootNote];
-    }
-
+    if (enharmonicMap[rootNote]) rootNote = enharmonicMap[rootNote];
     const index = CHORDS.indexOf(rootNote);
     if (index === -1) return part;
 
@@ -157,61 +153,70 @@ function transposeSingleChord(chord: string, steps: number): string {
     return CHORDS[newIndex] + suffix;
   };
 
-  if (parts.length === 1) {
-    return transposePart(parts[0]);
-  } else if (parts.length === 2) {
-    return `${transposePart(parts[0])}/${transposePart(parts[1])}`;
-  } else {
-    return chord;
-  }
+  if (parts.length === 1) return transposePart(parts[0]) + trailingDots;
+  if (parts.length === 2)
+    return `${transposePart(parts[0])}/${transposePart(
+      parts[1]
+    )}${trailingDots}`;
+  return chord;
 }
 
-// Transpose an entire line
-function transposeChord(line: string, steps: number): string {
-  if (!line || !line.trim()) return line;
-  return line
-    .trim()
-    .split(/\s+/)
-    .map((chord) => transposeSingleChord(chord, steps))
-    .join(" ");
+function transposeChordPreserveSpace(line: string, steps: number): string {
+  return line.replace(/([^\s]+)/g, (chord) =>
+    transposeSingleChord(chord, steps)
+  );
 }
 
-// Main chord viewer component
+function renderChordWithSpaces(chordLine: string) {
+  return chordLine
+    .split("")
+    .map((char, idx) =>
+      char === " " ? (
+        <span key={idx}>&nbsp;</span>
+      ) : (
+        <span key={idx}>{char}</span>
+      )
+    );
+}
+
 function ChordViewer({ song }: { song: typeof song }) {
   const [transpose, setTranspose] = useState(0);
 
   return (
     <div className="p-6 text-white bg-black font-mono min-h-screen">
-      <div className="mb-4 flex items-center gap-3">
-        <h1 className="text-xl text-yellow-300">Mangu ♪ {song.capo}</h1>
-        <button
-          onClick={() => setTranspose((t) => t - 1)}
-          className="bg-gray-700 px-2 rounded hover:bg-gray-600"
-        >
-          - Transpose
-        </button>
-        <button
-          onClick={() => setTranspose((t) => t + 1)}
-          className="bg-gray-700 px-2 rounded hover:bg-gray-600"
-        >
-          + Transpose
-        </button>
-        <span className="text-sm text-gray-400">({transpose})</span>
+      <div className="mb-4 flex flex-col gap-3">
+        <h1 className="text-xl ">420 Mangu Chord Mudah ♪</h1>
+        <div>DO Original = {song.capo}</div>
+        <div>Tempo: {song.tempo}</div>
+        <div className="flex gap-4">
+          <button
+            onClick={() => setTranspose((t) => t - 1)}
+            className="bg-gray-700 px-2 rounded hover:bg-gray-600 text-2xl"
+          >
+            -
+          </button>
+          <button
+            onClick={() => setTranspose((t) => t + 1)}
+            className="bg-gray-700 px-2 rounded hover:bg-gray-600 text-2xl"
+          >
+            +
+          </button>
+        </div>
       </div>
 
       {song.sections.map((section, i) => (
-        <div key={i} className="mb-6 text-justify">
-          {section.title && (
-            <h2 className="text-green-300 mb-2">{section.title}</h2>
-          )}
+        <div key={i} className="mb-6">
+          {section.title && <h2 className="mb-2">{section.title}</h2>}
           <div>
             {section.lines.map((line, j) => (
-              <pre key={j} className="mb-2">
-                <div className="text-green-400 whitespace-pre-wrap">
-                  {transposeChord(line.chord, transpose)}
-                </div>
+              <div key={j} className="mb-4">
+                <pre className="text-yellow-200 overflow-x-auto">
+                  {renderChordWithSpaces(
+                    transposeChordPreserveSpace(line.chord, transpose)
+                  )}
+                </pre>
                 <div>{line.lyric}</div>
-              </pre>
+              </div>
             ))}
           </div>
         </div>
