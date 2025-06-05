@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 // Song data
 const song = {
@@ -102,7 +102,6 @@ const song = {
   ],
 };
 
-// List of valid chord roots in sharp format
 const CHORDS = [
   "C",
   "C#",
@@ -118,7 +117,6 @@ const CHORDS = [
   "B",
 ];
 
-// Enharmonic map for flats and rare cases
 const enharmonicMap: Record<string, string> = {
   Db: "C#",
   Eb: "D#",
@@ -131,7 +129,6 @@ const enharmonicMap: Record<string, string> = {
   "B#": "C",
 };
 
-// Transpose a single chord and preserve trailing dots
 function transposeSingleChord(chord: string, steps: number): string {
   const dotMatch = chord.match(/(\.*)$/);
   const trailingDots = dotMatch ? dotMatch[0] : "";
@@ -143,11 +140,9 @@ function transposeSingleChord(chord: string, steps: number): string {
     if (!match) return part;
     let [_, root, accidental, suffix] = match;
     let rootNote = root + accidental;
-
     if (enharmonicMap[rootNote]) rootNote = enharmonicMap[rootNote];
     const index = CHORDS.indexOf(rootNote);
     if (index === -1) return part;
-
     const newIndex =
       (((index + steps) % CHORDS.length) + CHORDS.length) % CHORDS.length;
     return CHORDS[newIndex] + suffix;
@@ -181,46 +176,86 @@ function renderChordWithSpaces(chordLine: string) {
 
 function ChordViewer({ song }: { song: typeof song }) {
   const [transpose, setTranspose] = useState(0);
+  const [autoScroll, setAutoScroll] = useState(false);
+  const [scrollSpeed, setScrollSpeed] = useState(1);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let interval: number | undefined;
+
+    if (autoScroll) {
+      interval = window.setInterval(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop += scrollSpeed;
+        }
+      }, 100); // every 30ms
+    }
+
+    return () => clearInterval(interval);
+  }, [autoScroll, scrollSpeed]);
 
   return (
     <div className="p-6 text-white bg-black font-mono min-h-screen">
       <div className="mb-4 flex flex-col gap-3">
-        <h1 className="text-xl ">420 Mangu Chord Mudah ♪</h1>
+        <h1 className="text-xl">420 Mangu Chord Mudah ♪</h1>
         <div>DO Original = {song.capo}</div>
         <div>Tempo: {song.tempo}</div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center flex-wrap">
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setTranspose((t) => t - 1)}
+              className="bg-gray-700 px-2 rounded hover:bg-gray-600 text-2xl"
+            >
+              -
+            </button>
+            <button
+              onClick={() => setTranspose((t) => t + 1)}
+              className="bg-gray-700 px-2 rounded hover:bg-gray-600 text-2xl"
+            >
+              +
+            </button>
+          </div>
+
           <button
-            onClick={() => setTranspose((t) => t - 1)}
-            className="bg-gray-700 px-2 rounded hover:bg-gray-600 text-2xl"
+            onClick={() => setAutoScroll((prev) => !prev)}
+            className="bg-blue-600 px-3 py-1 rounded hover:bg-blue-500"
           >
-            -
+            {autoScroll ? "Stop" : "Start"}
           </button>
-          <button
-            onClick={() => setTranspose((t) => t + 1)}
-            className="bg-gray-700 px-2 rounded hover:bg-gray-600 text-2xl"
-          >
-            +
-          </button>
+
+          <div className="flex items-center gap-2">
+            <label>Speed:</label>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={scrollSpeed}
+              onChange={(e) => setScrollSpeed(Number(e.target.value))}
+              className="w-24"
+            />
+          </div>
         </div>
       </div>
 
-      {song.sections.map((section, i) => (
-        <div key={i} className="mb-6">
-          {section.title && <h2 className="mb-2">{section.title}</h2>}
-          <div>
-            {section.lines.map((line, j) => (
-              <div key={j} className="mb-4">
-                <pre className="text-yellow-200 overflow-x-auto">
-                  {renderChordWithSpaces(
-                    transposeChordPreserveSpace(line.chord, transpose)
-                  )}
-                </pre>
-                <div>{line.lyric}</div>
-              </div>
-            ))}
+      <div ref={scrollRef} className="overflow-y-auto max-h-[70vh] pr-4">
+        {song.sections.map((section, i) => (
+          <div key={i} className="mb-6">
+            {section.title && <h2 className="mb-2">{section.title}</h2>}
+            <div>
+              {section.lines.map((line, j) => (
+                <div key={j} className="mb-4">
+                  <pre className="text-yellow-200 overflow-x-auto">
+                    {renderChordWithSpaces(
+                      transposeChordPreserveSpace(line.chord, transpose)
+                    )}
+                  </pre>
+                  <div>{line.lyric}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
