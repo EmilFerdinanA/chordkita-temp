@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Song data
 const song = {
@@ -138,7 +138,7 @@ function transposeSingleChord(chord: string, steps: number): string {
   const transposePart = (part: string) => {
     const match = part.match(/^([A-G])([b#]?)(.*)$/);
     if (!match) return part;
-    let [_, root, accidental, suffix] = match;
+    const [, root, accidental, suffix] = match;
     let rootNote = root + accidental;
     if (enharmonicMap[rootNote]) rootNote = enharmonicMap[rootNote];
     const index = CHORDS.indexOf(rootNote);
@@ -174,7 +174,7 @@ function renderChordWithSpaces(chordLine: string) {
     );
 }
 
-function ChordViewer({ song }: { song: typeof song }) {
+function ChordViewer({ song }: any) {
   const [transpose, setTranspose] = useState(0);
   const [autoScroll, setAutoScroll] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(1);
@@ -238,11 +238,11 @@ function ChordViewer({ song }: { song: typeof song }) {
       </div>
 
       <div ref={scrollRef} className="overflow-y-auto max-h-[70vh] pr-4">
-        {song.sections.map((section, i) => (
+        {song.sections.map((section: any, i: number) => (
           <div key={i} className="mb-6">
             {section.title && <h2 className="mb-2">{section.title}</h2>}
             <div>
-              {section.lines.map((line, j) => (
+              {section.lines.map((line: any, j: number) => (
                 <div key={j} className="mb-4">
                   <pre className="text-yellow-200 overflow-x-auto">
                     {renderChordWithSpaces(
