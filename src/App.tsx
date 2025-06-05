@@ -237,7 +237,7 @@ function ChordViewer({ song }: any) {
         </div>
       </div>
 
-      <div ref={scrollRef} className="overflow-y-auto max-h-[70vh] pr-4">
+      <div ref={scrollRef} className="overflow-y-auto max-h-[70vh] pr-4 pt-8">
         {song.sections.map((section: any, i: number) => (
           <div key={i} className="mb-6">
             {section.title && <h2 className="mb-2">{section.title}</h2>}
