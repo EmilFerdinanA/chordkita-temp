@@ -13,7 +13,7 @@ const originalSong = {
 const App = () => {
   const [keyOffset, setKeyOffset] = useState(0);
   const [isAutoScroll, setIsAutoScroll] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState(0); // ⬅️ default: no select
+  const [scrollSpeed, setScrollSpeed] = useState(0);
   const [panelOpen, setPanelOpen] = useState(true);
   const animationRef = useRef<number | null>(null);
 
@@ -21,19 +21,13 @@ const App = () => {
     setKeyOffset((prev) => prev + offset);
   };
 
+  // Auto scroll logic
   useEffect(() => {
     const step = () => {
       const scrollTop = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const bodyHeight = document.body.scrollHeight;
-
-      if (scrollTop + windowHeight < bodyHeight - 1 && scrollSpeed > 0) {
+      if (scrollSpeed > 0) {
         window.scrollTo(0, scrollTop + scrollSpeed);
         animationRef.current = requestAnimationFrame(step);
-      } else {
-        setIsAutoScroll(false);
-        setPanelOpen(false);
-        setScrollSpeed(0); // ⬅️ reset ke "no select"
       }
     };
 
@@ -70,10 +64,10 @@ const App = () => {
 
       <Lyric originalSong={originalSong} keyOffset={keyOffset} />
 
-      {/* === Control Panel Kanan === */}
+      {/* Panel auto scroll kanan */}
       {panelOpen && (
         <div className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 flex items-center z-50">
-          {/* Tombol vertikal untuk tutup */}
+          {/* Tombol tutup panel */}
           <div
             className="mr-2 transform -rotate-90 origin-left text-xs cursor-pointer"
             onClick={() => setPanelOpen(false)}
@@ -81,7 +75,7 @@ const App = () => {
             tutup auto scroll
           </div>
 
-          {/* Panel isi */}
+          {/* Isi panel scroll */}
           <div className="flex flex-col items-center">
             <div className="text-sm mb-1">high</div>
             {[5, 4, 3, 2, 1].map((s) => (
@@ -100,7 +94,7 @@ const App = () => {
               className="text-red-500 text-sm mt-1 cursor-pointer"
               onClick={() => {
                 setIsAutoScroll(false);
-                setScrollSpeed(0); // ⬅️ reset juga kalau pencet stop
+                setScrollSpeed(0); // ❗️Reset selector
               }}
             >
               stop
@@ -109,7 +103,7 @@ const App = () => {
         </div>
       )}
 
-      {/* Tombol buka panel kalau panel tertutup */}
+      {/* Tombol buka panel */}
       {!panelOpen && (
         <div
           className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gray-700 text-white p-1 text-xs cursor-pointer rotate-90 z-50"
