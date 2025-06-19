@@ -1,27 +1,50 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Lyric from "./components/Lyric";
 
 const originalSong = {
   title: "Contoh Lagu",
   artist: "Emil & The Chords",
-  lyrics: [
-    {
-      line: "G        C           Am7            C        D7       G",
-      lyric: "Saying I love you is not the words I want to hear from you",
-    },
-    {
-      line: "Em        Am7         D7        G       C       G/B    Am",
-      lyric: "It’s not that I want you not to say but if you only knew",
-    },
-  ],
+  lyrics: Array(40).fill({
+    line: "G        C           Am7            C        D7       G",
+    lyric: "Saying I love you is not the words I want to hear from you",
+  }),
 };
 
 const App = () => {
   const [keyOffset, setKeyOffset] = useState(0);
+  const [isAutoScroll, setIsAutoScroll] = useState(false);
+  const animationRef = useRef<number | null>(null);
 
-  const handleTranspose = (offset: any) => {
+  const handleTranspose = (offset: number) => {
     setKeyOffset((prev) => prev + offset);
   };
+
+  useEffect(() => {
+    const scrollSpeed = 1;
+
+    const scrollStep = () => {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const bodyHeight = document.body.scrollHeight;
+
+      if (scrollTop + windowHeight < bodyHeight - 1) {
+        window.scrollTo(0, scrollTop + scrollSpeed);
+        animationRef.current = requestAnimationFrame(scrollStep);
+      } else {
+        setIsAutoScroll(false);
+      }
+    };
+
+    if (isAutoScroll) {
+      animationRef.current = requestAnimationFrame(scrollStep);
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isAutoScroll]);
 
   return (
     <div className="p-8 font-mono">
@@ -33,6 +56,12 @@ const App = () => {
           -
         </button>
         <button onClick={() => handleTranspose(1)}>+</button>
+        <button
+          onClick={() => setIsAutoScroll((prev) => !prev)}
+          className="px-2 py-1 bg-blue-500 text-white rounded"
+        >
+          {isAutoScroll ? "Stop Scroll" : "Auto Scroll"}
+        </button>
       </div>
 
       <div>
